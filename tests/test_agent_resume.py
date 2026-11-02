@@ -30,8 +30,8 @@ def terminal(address="t1", pid=300, fg_pid=None, fg_name="fish", lbl=None, state
             "foreground": {"pid": pid if fg_pid is None else fg_pid, "name": fg_name}}
 
 
-def run_plan(terminals, boot=BOOT, folder_ok=lambda p: True, file_ok=lambda p: True):
-    return ar.plan(terminals, boot, folder_ok=folder_ok, file_ok=file_ok)
+def run_plan(terminals, boot=BOOT, folder_ok=lambda p: True, file_ok=lambda p: True, age=lambda pid: 60.0):
+    return ar.plan(terminals, boot, folder_ok=folder_ok, file_ok=file_ok, age=age)
 
 
 class LabelTests(unittest.TestCase):
@@ -215,6 +215,22 @@ class PlanTests(unittest.TestCase):
             todo, skipped = run_plan([term], **checks)
             self.assertEqual(todo, [])
             self.assertEqual([s["reason"] for s in skipped], [reason])
+
+    def test_waits_for_a_restored_shell_still_starting(self):
+        # Right after a core start, a restored shell runs its startup files before it is in front.
+        for fg in ({"pid": None, "name": None}, {"pid": 301, "name": "starship"}):
+            term = terminal(lbl=label())
+            term["foreground"] = fg
+            _, skipped = run_plan([term], age=lambda pid: 1.0)
+            self.assertEqual([s["reason"] for s in skipped], [ar.NOT_STARTED], fg)
+            _, skipped = run_plan([term], age=lambda pid: 30.0)
+            self.assertEqual([s["reason"] for s in skipped], ["something else is running there"], fg)
+            _, skipped = run_plan([term], age=lambda pid: None)
+            self.assertEqual([s["reason"] for s in skipped], ["something else is running there"], fg)
+
+    def test_a_young_shell_at_its_prompt_is_resumed(self):
+        todo, skipped = run_plan([terminal(lbl=label())], age=lambda pid: 1.0)
+        self.assertEqual(([t["terminal"] for t in todo], skipped), (["t1"], []))
 
     def test_claude_and_codex_with_the_same_id_are_different_sessions(self):
         todo, _ = run_plan([terminal("t1", lbl=label(shell=1)), terminal("t2", pid=301, lbl=label(agent="codex", shell=2))])

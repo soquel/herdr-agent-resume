@@ -111,6 +111,7 @@ TYPABLE_ARG_RE = re.compile(r"^[^'\\\x00-\x1f\x7f]*$")
 SEND_GAP = 0.15      # seconds between two terminals, like the Herdr TUI's spacing
 SHELL_SETTLE = 1.5   # a restored shell runs this long before anything is typed into it
 START_WAIT = 12.0    # how long `resume` waits for restored shells that haven't started yet
+SHELL_STARTUP = 10.0 # a shell younger than this, not in front yet, is still starting (rc files)
 EXIT_GRACE = 2.0     # after an agent exits, wait this long before deciding it quit by itself
 VERIFY_WAIT = 5.0    # after typing, how long `resume` gives agents before checking they started
 QUICK_EXIT = 10.0    # an agent `here` started that exits sooner than this, with an error, failed
@@ -645,6 +646,13 @@ def at_shell(terminal):
     return bool(terminal.get("pid")) and fg.get("pid") == terminal.get("pid") and _names(fg.get("name") or "") & SHELLS
 
 
+def starting_shell(terminal, age):
+    """True when the terminal's own shell is so young that it may not be in front yet: a pass
+    right after a core start sees restored shells still running their startup files."""
+    seconds = age(terminal["pid"])
+    return seconds is not None and seconds < SHELL_STARTUP
+
+
 def starting_agent(terminal, agent):
     """True when the terminal's foreground is this agent, or `agent_resume.py here` about
     to become it: the shell brought it back by itself."""
@@ -682,7 +690,7 @@ def command(label):
     return f"cd '{cwd}' && " + " ".join(_quote(a) for a in resume_argv(label, typable_only=True))
 
 
-def plan(terminals, boot, folder_ok=os.path.isdir, file_ok=os.path.isfile):
+def plan(terminals, boot, folder_ok=os.path.isdir, file_ok=os.path.isfile, age=shell_age):
     """Which terminals to resume. Pure: `terminals` are `hc get` records."""
     entries = []
     for terminal in terminals:
@@ -707,7 +715,12 @@ def plan(terminals, boot, folder_ok=os.path.isdir, file_ok=os.path.isfile):
         elif not terminal.get("pid"):
             reason = NOT_STARTED
         elif not at_shell(terminal):
-            reason = BY_SHELL if starting_agent(terminal, label["agent"]) else "something else is running there"
+            if starting_agent(terminal, label["agent"]):
+                reason = BY_SHELL
+            elif starting_shell(terminal, age):
+                reason = NOT_STARTED
+            else:
+                reason = "something else is running there"
         elif not folder_ok(label.get("cwd")):
             reason = "its folder is gone"
         elif not file_ok(label.get("transcript")):
