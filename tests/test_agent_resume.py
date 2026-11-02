@@ -76,13 +76,13 @@ class ShellTests(unittest.TestCase):
 
 class CommandTests(unittest.TestCase):
     def test_claude_and_codex(self):
-        self.assertEqual(ar.command(label(cwd="/a b/c")), f"cd '/a b/c' && claude --resume {SID}")
-        self.assertEqual(ar.command(label(agent="codex", session=SID2)), f"cd '/work' && codex resume {SID2}")
+        self.assertEqual(ar.command(label(cwd="/a b/c")), f" cd '/a b/c' && claude --resume {SID}")
+        self.assertEqual(ar.command(label(agent="codex", session=SID2)), f" cd '/work' && codex resume {SID2}")
 
     def test_grok_agy_pi_and_kiro(self):
-        self.assertEqual(ar.command(label(agent="grok")), f"cd '/work' && grok --resume {SID}")
-        self.assertEqual(ar.command(label(agent="agy")), f"cd '/work' && agy --conversation {SID}")
-        self.assertEqual(ar.command(label(agent="pi")), f"cd '/work' && pi --session {SID}")
+        self.assertEqual(ar.command(label(agent="grok")), f" cd '/work' && grok --resume {SID}")
+        self.assertEqual(ar.command(label(agent="agy")), f" cd '/work' && agy --conversation {SID}")
+        self.assertEqual(ar.command(label(agent="pi")), f" cd '/work' && pi --session {SID}")
         self.assertTrue(ar.command(label(agent="kiro", session="sess_0123abcd")).endswith("launch-kiro sess_0123abcd"))
         self.assertTrue(ar.valid_session("custom.id_1"))
 
@@ -122,13 +122,13 @@ class FlagTests(unittest.TestCase):
 
     def test_resume_command_with_flags(self):
         lbl = {**label(), "args": ["--model", "opus", "--append-system-prompt", "be brief", "--dangerously-skip-permissions"]}
-        self.assertEqual(ar.command(lbl), f"cd '/work' && claude --resume {SID} --model opus "
+        self.assertEqual(ar.command(lbl), f" cd '/work' && claude --resume {SID} --model opus "
                                           "--append-system-prompt 'be brief' --dangerously-skip-permissions")
         lbl["args"] = ["--append-system-prompt", "don't", "--model", "opus"]
-        self.assertEqual(ar.command(lbl), f"cd '/work' && claude --resume {SID} --model opus")  # can't be typed: left out
+        self.assertEqual(ar.command(lbl), f" cd '/work' && claude --resume {SID} --model opus")  # can't be typed: left out
         self.assertEqual(ar.resume_argv(lbl), ["claude", "--resume", SID, "--append-system-prompt", "don't", "--model", "opus"])
         codex = {**label(agent="codex", session=SID2), "args": ["-c", "a=b", "-s", "workspace-write"]}
-        self.assertEqual(ar.command(codex), f"cd '/work' && codex resume {SID2} -c a=b -s workspace-write")
+        self.assertEqual(ar.command(codex), f" cd '/work' && codex resume {SID2} -c a=b -s workspace-write")
 
     def test_keeps_flags_the_other_resume_commands_accept(self):
         self.assertEqual(ar.launch_flags("grok", ["--resume", SID, "--model", "grok-4", "--always-approve",
@@ -187,7 +187,7 @@ class PlanTests(unittest.TestCase):
         todo, skipped = run_plan([terminal(lbl=label(shell=100))])
         self.assertEqual(skipped, [])
         self.assertEqual(todo, [{"terminal": "t1", "where": "api / 1", "agent": "claude", "session": SID,
-                                 "cwd": "/work", "command": f"cd '/work' && claude --resume {SID}"}])
+                                 "cwd": "/work", "command": f" cd '/work' && claude --resume {SID}"}])
 
     def test_leaves_running_and_unlabeled_terminals_alone(self):
         todo, skipped = run_plan([terminal(lbl=label(shell=300)), terminal("t2"), terminal("t3", state="finished", lbl=label())])

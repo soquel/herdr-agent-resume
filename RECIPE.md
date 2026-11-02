@@ -10,7 +10,7 @@ Restarting the machine kills every agent. Herdr brings each terminal back as a b
 
 - Nothing until you press Ctrl+Shift+R. Installed with `--auto`, a restored terminal shows one dim line, `agent-resume: claude --resume <id> in <folder>`, and the agent opens on its old conversation as soon as the shell is up, with no popup or toast.
 - Then a popup pill, 340×40 px, centered at the top of the window 44 px down: the theme's `popover` background, a 1 px `border` outline, 10 px corners, 14 px side padding. Inside, 10 px apart: a 12 px braille spinner (`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`, 80 ms a frame) in `accent`, and 13 px `foreground` text, "Looking for agents to resume…", truncated with an ellipsis. It closes by itself when the pass ends: within a second when there's nothing to resume, about 5 s after typing when there is (it checks the agents came up).
-- In each terminal that gets its agent back, the shell shows the typed command, `cd '<folder>' && claude --resume <id>` (or `codex resume <id>`, `grok --resume <id>`, `agy --conversation <id>`, `pi --session <id>`, `python3 <mod>/agent_resume.py launch-kiro <id>`), and the agent opens on its old conversation, idle.
+- In each terminal that gets its agent back, the shell shows the typed command, ` cd '<folder>' && claude --resume <id>` (with a leading space, so shells that skip such lines keep it out of history) (or `codex resume <id>`, `grok --resume <id>`, `agy --conversation <id>`, `pi --session <id>`, `python3 <mod>/agent_resume.py launch-kiro <id>`), and the agent opens on its old conversation, idle.
 - Then a toast, one line of body:
   - success, "Resumed 3 agents", body the terminals' `space / tab`, 5 s;
   - warning, "Resumed 2 of 3 agents", body "Not resumed: web / 2: something else is running there", 8 s;

@@ -669,7 +669,9 @@ def _quote(arg):
 
 
 def command(label):
-    """What to type, or None when the folder can't be typed safely."""
+    """What to type, or None when the folder can't be typed safely. The leading space keeps it
+    out of shell history where the shell skips such lines (bash ignorespace, zsh
+    HIST_IGNORE_SPACE, fish, Atuin)."""
     cwd = label.get("cwd")
     if not isinstance(cwd, str) or not TYPABLE_PATH_RE.match(cwd):
         return None
@@ -677,9 +679,9 @@ def command(label):
         script = os.path.abspath(__file__)
         if not TYPABLE_PATH_RE.match(script) or not TYPABLE_PATH_RE.match(sys.executable):
             return None
-        return f"cd '{cwd}' && " + " ".join(_quote(a) for a in
+        return f" cd '{cwd}' && " + " ".join(_quote(a) for a in
             [sys.executable, script, "launch-kiro", label["session"]])
-    return f"cd '{cwd}' && " + " ".join(_quote(a) for a in resume_argv(label, typable_only=True))
+    return f" cd '{cwd}' && " + " ".join(_quote(a) for a in resume_argv(label, typable_only=True))
 
 
 def plan(terminals, boot, folder_ok=os.path.isdir, file_ok=os.path.isfile):
